@@ -10,6 +10,20 @@
   position: relative;
 }
 
+.popup__tooltip-text {
+  font-family: "Inter", arial, sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.1;
+  color: #000;
+}
+
+.popup__tooltip-icon {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 32px;
+}
+
 .popup {
   display: flex;
   position: fixed;
