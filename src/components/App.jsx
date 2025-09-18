@@ -7,106 +7,189 @@ import { api } from "../utils/api.js";
 import NewCard from "./Main/components/Popup/NewCard/NewCard.jsx";
 
 export default function App() {
-  const [popup, setPopup] = useState(null);
-  const [currentUser, setCurrentUser] = useState([]);
-  const [selectedCard, setSelectedCard] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState({});
   const [cards, setCards] = useState([]);
+  const [popup, setPopup] = useState(null);
+  const [tooltip, setTooltip] = useState({
+    open: false,
+    success: false,
+    message: "",
+  });
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Controla la visibilidad de los enlaces de login o registro dependiendo de la ruta
+  const showRegisterLink = location.pathname === "/signin";
+  const showLoginLink = location.pathname === "/signup";
+
+  // Obtener token del localStorage
+  const getToken = () => localStorage.getItem("jwt");
+
+  // Configurar el token en el localStorage
+  const setToken = (token) => localStorage.setItem("jwt", token);
+
+  // Eliminar el token del localStorage
+  const removeToken = () => localStorage.removeItem("jwt");
 
   useEffect(() => {
-    const fetchCards = async () => {
-      try {
-        const temCards = await api.getInitialCards();
-        setCards(temCards);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    fetchCards();
+    const token = getToken();
+    if (!token) return;
+
+    auth
+      .checkToken(token)
+      .then((data) => {
+        setCurrentUser(data.data);
+        setIsLoggedIn(true);
+      })
+      .catch((err) => {
+        console.log("Token inválido o error al obtener usuario:", err);
+        handleLogout();
+      });
   }, []);
 
   useEffect(() => {
-    (async () => {
-      await api.getUserInfo().then((user) => {
-        setCurrentUser(user);
-      });
-    })();
-  }, []);
+    if (!isLoggedIn) return;
 
-  const handleUpdateUser = (data) => {
-    (async () => {
-      await api.updateUserInfo(data).then((newData) => {
-        setCurrentUser(newData);
-      });
-    })();
-  };
-
-  const handleAddPlaceSubmit = ({ name, link }) => {
     api
-      .createCard({ name, link })
-      .then((newCard) => {
-        setCards([newCard, ...cards]);
-        handleClosePopup();
-      })
-      .catch((error) => console.error(error));
+      .getUserCards()
+      .then((data) => setCards(data))
+      .catch((err) => console.log("Error al obtener tarjetas:", err));
+  }, [isLoggedIn]);
+
+  const handleRegister = async (email, password) => {
+    try {
+      await auth.register(email, password);
+      setTooltip({ open: true, success: true, message: "¡Registro exitoso!" });
+      setTimeout(() => {
+        setTooltip({ open: false, success: true, message: "" });
+        navigate("/signin");
+      }, 2000);
+    } catch (err) {
+      console.error("Error al registrarse:", err);
+      const message = err.includes("400")
+        ? "Campos inválidos o incompletos."
+        : "Error del servidor.";
+      setTooltip({ open: true, success: false, message });
+    }
   };
 
-  const handleUpdateAvatar = (data) => {
-    api
-      .updateAvatar(data)
-      .then((newData) => {
-        setCurrentUser(newData);
-      })
-      .catch((error) => console.error("Error al actualizar el avatar:", error));
+  const handleLogin = async (email, password) => {
+    try {
+      const { token } = await auth.authorize(email, password);
+      setToken(token); // Guardar el token
+      setIsLoggedIn(true);
+      const userData = await auth.checkToken(token);
+      setCurrentUser(userData.data);
+
+      const cardsData = await api.getUserCards();
+      setCards(cardsData);
+
+      setTooltip({ open: true, success: true, message: "¡Ingreso exitoso!" });
+      setTimeout(() => {
+        setTooltip({ open: false, success: false, message: "" });
+        navigate("/");
+      }, 2000);
+    } catch (err) {
+      console.error("Error al iniciar sesión:", err);
+      const message = err.includes("400")
+        ? "Faltan campos obligatorios."
+        : "Email o contraseña incorrectos.";
+      setTooltip({ open: true, success: false, message });
+    }
   };
 
-  const handleOpenPopup = (popup) => {
-    setPopup(popup);
+  const handleLogout = () => {
+    removeToken(); // Eliminar el token
+    setIsLoggedIn(false);
+    setCurrentUser({});
+    setCards([]);
   };
+
+  const handleOpenPopup = (type, imageLink = "") => {
+    setPopup(type);
+    setPopupImage(imageLink);
+    setIsPopupOpen(true);
+  };
+
   const handleClosePopup = () => {
-    setPopup(null);
+    setIsPopupOpen(false);
+    setPopupType(null);
+    setPopupImage("");
   };
-
-  async function handleCardLike(card) {
-    // Verifica una vez más si a esta tarjeta ya les has dado like
-    const isLiked = card.isLiked;
-
-    // Envía una solicitud a la API y obtén los datos actualizados de la tarjeta
-    await api
-      .changeLikeCardStatus(card._id, !isLiked)
-      .then((newCard) => {
-        setCards((state) =>
-          state.map((currentCard) =>
-            currentCard._id === card._id ? newCard : currentCard
-          )
-        );
-      })
-      .catch((error) => console.error(error));
-  }
-
-  async function handleCardDelete(card) {
-    await api.deleteCard(card._id).then(() => {
-      setCards((prevCards) => prevCards.filter((c) => c._id !== card._id));
-    });
-  }
 
   return (
-    <CurrentUserContext.Provider
-      value={{ currentUser, handleUpdateUser, handleUpdateAvatar }}
-    >
-      <div className="page">
-        <Header />
-        <Main
-          cards={cards}
-          onCardLike={handleCardLike}
-          onCardDelete={handleCardDelete}
-          onOpenPopup={handleOpenPopup}
-          onClosePopup={handleClosePopup}
-          popup={popup}
-          onAddPlaceSubmit={handleAddPlaceSubmit}
-          onUpdateAvatar={handleUpdateAvatar}
-        />
-        <Footer />
-      </div>
-    </CurrentUserContext.Provider>
+    <Router>
+      <CurrentUserContext.Provider
+        value={{ currentUser, handleUpdateUser, handleUpdateAvatar }}
+      >
+        <div className="page">
+          <Header
+            isLoggedIn={isLoggedIn}
+            userEmail={currentUser.email}
+            onLogout={handleLogout}
+            showRegisterLink={showRegisterLink}
+            showLoginLink={showLoginLink}
+          />
+          <Routes>
+            {/* Ruta protegida */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute isLoggedIn={isLoggedIn}>
+                  <Main
+                    cards={cards}
+                    onCardLike={handleCardLike}
+                    onCardDelete={handleCardDelete}
+                    onOpenPopup={handleOpenPopup}
+                    onClosePopup={handleClosePopup}
+                    popup={popup}
+                    onAddPlaceSubmit={handleAddPlaceSubmit}
+                    onUpdateAvatar={handleUpdateAvatar}
+                  />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Ruta para el login */}
+            <Route
+              path="/signin"
+              element={
+                isLoggedIn ? (
+                  <Navigate to="/" />
+                ) : (
+                  <Login
+                    onLogin={handleLogin}
+                    tooltip={tooltip}
+                    setTooltip={setTooltip}
+                  />
+                )
+              }
+            />
+
+            {/* Ruta para el registro */}
+            <Route
+              path="/signup"
+              element={
+                isLoggedIn ? (
+                  <Navigate to="/" />
+                ) : (
+                  <Register
+                    onRegister={handleRegister}
+                    tooltip={tooltip}
+                    setTooltip={setTooltip}
+                  />
+                )
+              }
+            />
+
+            {/* Redirección por defecto */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <Footer />
+        </div>
+      </CurrentUserContext.Provider>
+    </Router>
   );
 }

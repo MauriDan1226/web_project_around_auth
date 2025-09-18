@@ -4,46 +4,52 @@ import { api } from "../../../../utils/api";
 import InfoTooltip from "../InfoTooltip/InfoTooltip";
 import "../../../../blocks/login.css";
 
-function Login({ onLogin, tooltip, setTooltip }) {
+function Login({ onLogin, tooltip, setTooltip, loading = false }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const navigate = useNavigate();
   const handleSubmit = (e) => {
     e.preventDefault();
-    onLogin(email, password);
+    onLogin(email, password); // En App.jsx: authorize // guardar token // checkToken
   };
 
   return (
     <>
-      <header></header>
       <main className="login">
-        <form onSubmit={handleSubmit} className="login__container">
+        <form onSubmit={handleSubmit} className="login__container" noValidate>
           <h2 className="login__title">Iniciar Sesión</h2>
+
           <input
             className="login__input"
+            name="email"
             type="email"
             placeholder="Correo Electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="username"
             required
           />
+
           <input
             className="login__input"
+            name="password"
             type="password"
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
             required
           />
-          <button type="submit" className="login__button">
-            Iniciar Sesión
+
+          <button type="submit" className="login__button" disabled={loading}>
+            {loading ? "Entrando..." : "Iniciar Sesión"}
           </button>
         </form>
+
         <p className="login__redirect">
           ¿No eres usuario?{" "}
-          <Link to="/signup" style={{ color: "lightblue" }}>
-            Haz click aquí para registrarte
+          <Link to="/signup" className="login__link">
+            Regístrate aquí
           </Link>
         </p>
       </main>
