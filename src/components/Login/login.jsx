@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../../../../utils/api";
+import Api from "../../utils/api.js";
 import InfoTooltip from "../InfoTooltip/InfoTooltip";
-import "../../../../blocks/login.css";
+import "../../blocks/login.css";
 
 function Login({ onLogin, tooltip, setTooltip, loading = false }) {
   const [email, setEmail] = useState("");

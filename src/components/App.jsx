@@ -1,10 +1,22 @@
+import { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from "react-router-dom";
 import Header from "../components/Header/Header";
 import Main from "../components/Main/Main";
 import Footer from "../components/Footer/Footer";
 import CurrentUserContext from "../contexts/CurrentUserContext.js";
-import { useState, useEffect } from "react";
-import { api } from "../utils/api.js";
-import NewCard from "./Main/components/Popup/NewCard/NewCard.jsx";
+import api from "../utils/api.js";
+import InfoTooltip from "../components/InfoTooltip/InfoTooltip.jsx";
+import Login from "../components/Login/login.jsx";
+import Register from "../components/Register/register.jsx";
+import auth from "../utils/auth.js";
+import ProtectedRoute from "../components/ProtectedRoute/protectedRoute.jsx";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

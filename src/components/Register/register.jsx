@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import InfoTooltip from "../InfoTooltip/InfoTooltip";
-import "../../../../blocks/register.css";
+import "../../blocks/register.css";
 
 function Register({ onRegister, tooltip, setTooltip, loading = false }) {
   const [email, setEmail] = useState("");

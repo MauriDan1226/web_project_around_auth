@@ -1,8 +1,8 @@
 import React from "react";
-import successImage from "../../../../images/success.jpg";
-import failImage from "../../../../images/Fail.jpg";
-import "../../../../blocks/popup.css";
-import Popup from "../Popup/Popup";
+import successImage from "../../images/pNegro.png";
+import failImage from "../../images/xRojo.png";
+import "../../blocks/popup.css";
+import Popup from "../Main/components/Popup/Popup";
 
 //Muestra éxito o error tras registro/login//
 

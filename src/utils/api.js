@@ -1,3 +1,4 @@
+import { getToken } from "./token";
 class Api {
   constructor(options) {
     this._baseUrl = options.baseUrl;
@@ -9,18 +10,40 @@ class Api {
   }
 
   getUserInfo() {
-    return fetch(`${this._baseUrl}/users/me`, {
+    return fetch(`${this.baseUrl}/users/me`, {
       method: "GET",
-      headers: {
-        ...this._headers,
-      },
-    }).then((res) => res.json());
+      headers: this.headers,
+    }).then((res) => {
+      if (res.ok) {
+        return res.json();
+      } else if (res.status === 403) {
+        localStorage.removeItem("jwt");
+        return Promise.reject("No autorizado, redirigiendo a login");
+      } else {
+        return Promise.reject(`Error: ${res.status}`);
+      }
+    });
   }
 
   getInitialCards() {
     return fetch(`${this._baseUrl}/cards`, {
       headers: { ...this._headers },
     }).then(this._handleServerResponse);
+  }
+
+  editUserInfo(name, about) {
+    return fetch(`${this.baseUrl}/users/me`, {
+      method: "PATCH",
+      headers: this.headers,
+      body: JSON.stringify({
+        name: name,
+        about: about,
+      }),
+    }).then((res) => {
+      if (res.ok) {
+        return res.json();
+      }
+    });
   }
 
   createCard(body) {
